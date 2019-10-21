@@ -1,74 +1,67 @@
 ﻿using System;
+using System.Configuration;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 
 namespace PhoneBookTestApp
 {
     public class DatabaseUtil
     {
-        public static void initializeDatabase()
+        public static void InitializeDatabase(params Person[] persons)
         {
-            var dbConnection = new SQLiteConnection("Data Source= MyDatabase.sqlite;Version=3;");
-            dbConnection.Open();
+            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
 
             try
             {
-                SQLiteCommand command =
-                    new SQLiteCommand(
-                        "create table PHONEBOOK (NAME varchar(255), PHONENUMBER varchar(255), ADDRESS varchar(255))",
-                        dbConnection);
-                command.ExecuteNonQuery();
+                connection.Open();
+                Console.WriteLine("Подключение открыто");
+                SqlCommand command = new SqlCommand();
 
-                command =
-                    new SQLiteCommand(
-                        "INSERT INTO PHONEBOOK (NAME, PHONENUMBER, ADDRESS) VALUES('Chris Johnson','(321) 231-7876', '452 Freeman Drive, Algonac, MI')",
-                        dbConnection);
+                command.Connection = connection;
+                command.CommandText = "Create table PhoneBook(Name varchar(255), PhoneNumber varchar(255), Address varchar(255))";
                 command.ExecuteNonQuery();
-
-                command =
-                    new SQLiteCommand(
-                        "INSERT INTO PHONEBOOK (NAME, PHONENUMBER, ADDRESS) VALUES('Dave Williams','(231) 502-1236', '285 Huron St, Port Austin, MI')",
-                        dbConnection);
-                command.ExecuteNonQuery();
+                if (persons != null)
+                {
+                    foreach (var person in persons)
+                    {
+                        command.CommandText =
+                            $"Insert into PhoneBook values('{person.Name}', '{person.PhoneNumber}', '{person.Address}')";
+                        command.ExecuteNonQuery();
+                    }
+                }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine(ex.Message);
             }
             finally
             {
-                dbConnection.Close();
+                connection.Close();
             }
-        }
-
-        public static SQLiteConnection GetConnection()
-        {
-            var dbConnection = new SQLiteConnection("Data Source= MyDatabase.sqlite;Version=3;");
-            dbConnection.Open();
-
-            return dbConnection;
         }
 
         public static void CleanUp()
         {
-            var dbConnection = new SQLiteConnection("Data Source= MyDatabase.sqlite;Version=3;");
-            dbConnection.Open();
-
+            var connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+            var connection = new SqlConnection(connectionString);
+            
             try
             {
-                SQLiteCommand command =
-                    new SQLiteCommand(
-                        "drop table PHONEBOOK",
-                        dbConnection);
+                connection.Open();
+                SqlCommand command = new SqlCommand();
+                command.Connection = connection;
+                command.CommandText = "Drop table PhoneBook";
                 command.ExecuteNonQuery();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine(ex.Message);
             }
             finally
             {
-                dbConnection.Close();
+                connection.Close();
             }
         }
     }

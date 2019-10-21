@@ -2,7 +2,7 @@
 {
     public interface IPhoneBook
     {
-        Person findPerson(string firstName, string lastName);
-        void addPerson(Person newPerson);
+        Person FindPerson(string name);
+        void AddPerson(Person newPerson);
     }
 }

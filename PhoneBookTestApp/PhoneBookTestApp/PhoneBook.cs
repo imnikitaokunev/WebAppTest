@@ -1,15 +1,49 @@
-﻿namespace PhoneBookTestApp
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using NUnit.Framework;
+
+namespace PhoneBookTestApp
 {
     public class PhoneBook : IPhoneBook
     {
-        public void AddPerson(Person person)
+        private List<Person> phoneBook;
+
+        public int Length => phoneBook.Count;
+
+        public Person this[int index]
         {
-            throw new System.NotImplementedException();
+            get => phoneBook[index];
+            set => phoneBook[index] = value;
         }
 
-        public Person findPerson()
+        public PhoneBook()
         {
-            throw new System.NotImplementedException();
+            phoneBook = new List<Person>();
+        }
+
+        public void AddPerson(Person person)
+        {
+            if (person != null)
+            {
+                phoneBook.Add(person);
+            }
+        }
+
+        public Person FindPerson(string name)
+        {
+            Person person = null;
+
+            foreach (var item in phoneBook)
+            {
+                if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    person = item;
+                    break;
+                }
+            }
+
+            return person;
         }
     }
 }
