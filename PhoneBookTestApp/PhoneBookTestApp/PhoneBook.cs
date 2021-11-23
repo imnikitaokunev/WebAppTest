@@ -1,49 +1,89 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using NUnit.Framework;
+using System.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 
 namespace PhoneBookTestApp
 {
     public class PhoneBook : IPhoneBook
     {
-        private List<Person> phoneBook;
+        private readonly ILogger _logger;
 
-        public int Length => phoneBook.Count;
-
-        public Person this[int index]
+        public PhoneBook(ILogger logger)
         {
-            get => phoneBook[index];
-            set => phoneBook[index] = value;
+            _logger = logger;
         }
 
-        public PhoneBook()
+        public List<Person> GetAll()
         {
-            phoneBook = new List<Person>();
+            var connection = DatabaseUtil.GetConnection();
+            using (connection)
+            {
+                var command = new SqlCommand($"Select * from PhoneBook", connection);
+                var result = new List<Person>();
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var person = new Person
+                        {
+                            Name = reader.GetString(0),
+                            PhoneNumber = reader.GetString(1),
+                            Address = reader.GetString(2)
+                        };
+                        result.Add(person);
+                    }
+                }
+
+                return result;
+            }
         }
 
         public void AddPerson(Person person)
         {
-            if (person != null)
+            var connection = DatabaseUtil.GetConnection();
+            using (connection)
             {
-                phoneBook.Add(person);
+                var command = new SqlCommand($"Insert into PhoneBook (Name, PhoneNumber, Address) values (@Name, @PhoneNumber, @Address)", connection);
+                command.Parameters.AddWithValue("@Name", person.Name);
+                command.Parameters.AddWithValue("@PhoneNumber", person.PhoneNumber);
+                command.Parameters.AddWithValue("@Address", person.Address);
+
+                try
+                {
+                    command.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, "An error occurred");
+                }
             }
         }
 
         public Person FindPerson(string name)
         {
-            Person person = null;
-
-            foreach (var item in phoneBook)
+            var connection = DatabaseUtil.GetConnection();
+            using (connection)
             {
-                if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                var command = new SqlCommand("Select * from PhoneBook where Name like @Name", connection);
+                command.Parameters.AddWithValue("@Name", name);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    person = item;
-                    break;
+                    if (!reader.Read())
+                    {
+                        return null;
+                    }
+
+                    return new Person
+                    {
+                        Name = reader.GetString(0),
+                        PhoneNumber = reader.GetString(1),
+                        Address = reader.GetString(2)
+                    };
                 }
             }
-
-            return person;
         }
     }
 }

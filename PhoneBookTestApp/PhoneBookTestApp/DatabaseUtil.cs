@@ -1,68 +1,78 @@
 ﻿using System;
 using System.Configuration;
 using System.Data.SqlClient;
-using System.Data.SQLite;
 
 namespace PhoneBookTestApp
 {
     public class DatabaseUtil
     {
-        public static void InitializeDatabase(params Person[] persons)
+        public static void InitializeDatabase()
         {
-            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-            SqlConnection connection = new SqlConnection(connectionString);
+            var dbConnection = new SqlConnection(GetConnectionString());
+            dbConnection.Open();
 
             try
             {
-                connection.Open();
-                Console.WriteLine("Подключение открыто");
-                SqlCommand command = new SqlCommand();
-
-                command.Connection = connection;
-                command.CommandText = "Create table PhoneBook(Name varchar(255), PhoneNumber varchar(255), Address varchar(255))";
+                SqlCommand command =
+                    new SqlCommand(
+                        "create table PHONEBOOK (NAME varchar(255), PHONENUMBER varchar(255), ADDRESS varchar(255))",
+                        dbConnection);
                 command.ExecuteNonQuery();
-                if (persons != null)
-                {
-                    foreach (var person in persons)
-                    {
-                        command.CommandText =
-                            $"Insert into PhoneBook values('{person.Name}', '{person.PhoneNumber}', '{person.Address}')";
-                        command.ExecuteNonQuery();
-                    }
-                }
+
+                command =
+                    new SqlCommand(
+                        "INSERT INTO PHONEBOOK (NAME, PHONENUMBER, ADDRESS) VALUES('Chris Johnson','(321) 231-7876', '452 Freeman Drive, Algonac, MI')",
+                        dbConnection);
+                command.ExecuteNonQuery();
+
+                command =
+                    new SqlCommand(
+                        "INSERT INTO PHONEBOOK (NAME, PHONENUMBER, ADDRESS) VALUES('Dave Williams','(231) 502-1236', '285 Huron St, Port Austin, MI')",
+                        dbConnection);
+                command.ExecuteNonQuery();
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
+                throw;
             }
             finally
             {
-                connection.Close();
+                dbConnection.Close();
             }
+        }
+
+        public static SqlConnection GetConnection()
+        {
+            var dbConnection = new SqlConnection(GetConnectionString());
+            dbConnection.Open();
+
+            return dbConnection;
         }
 
         public static void CleanUp()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-            var connection = new SqlConnection(connectionString);
-            
+            var dbConnection = new SqlConnection(GetConnectionString());
+            dbConnection.Open();
+
             try
             {
-                connection.Open();
-                SqlCommand command = new SqlCommand();
-                command.Connection = connection;
-                command.CommandText = "Drop table PhoneBook";
+                SqlCommand command = new SqlCommand("drop table PHONEBOOK", dbConnection);
                 command.ExecuteNonQuery();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
+                throw;
             }
             finally
             {
-                connection.Close();
+                dbConnection.Close();
             }
+        }
+
+        private static string GetConnectionString()
+        {
+            return ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
         }
     }
 }
